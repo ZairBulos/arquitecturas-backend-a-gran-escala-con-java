@@ -31,4 +31,8 @@ Sistema de Reservaciones de Alta Concurrencia
    Entidades principales, datos y tipos
 5. **[Tech Stack](/05/README.md)**
 6. **Cuestionario de evaluación**
-7. **[Video de explicación de su diseño]()**
+
+## Presentación
+
+- [Ver en el repositorio](/docs/Arquitecturas_Backend_a_Gran_Escala_con_Java.pdf)
+- [Ver en Google Drive](https://docs.google.com/presentation/d/1tKBL8hK-RP2lgaiJt4gTwj3Ps1BzaZOTQ7oQlPzpnck/edit?usp=sharing)
