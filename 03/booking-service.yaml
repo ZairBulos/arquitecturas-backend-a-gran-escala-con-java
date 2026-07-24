@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Booking Service API
+  description: >
+    Dominio core del sistema. Fuente de verdad del estado del asiento.
+    Consistencia fuerte (CP): ante duda, rechaza la operación antes que arriesgar una doble reserva.
+  version: 1.0.0
+
+servers:
+  - url: https://api.ticketing.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /bookings/reservations:
+    post:
+      summary: Reservar asientos (hold temporal de 10 minutos)
+      description: >
+        Requiere un admission_token válido emitido por Virtual Waiting Queue para eventos de alta demanda.
+        El primer request en tomar un asiento se queda con el hold; solicitudes posteriores para el mismo asiento reciben 409.
+        El hold se libera automáticamente a los 10 minutos si no se confirma el pago.
+      operationId: createReservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_id, seat_ids]
+              properties:
+                event_id:
+                  type: string
+                  format: uuid
+                seat_ids:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                admission_token:
+                  type: string
+                  description: Requerido si el evento tiene fila virtual activa.
+      responses:
+        "201":
+          description: Hold creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "400":
+          description: Solicitud inválida.
+        "403":
+          description: admission_token inválido, expirado o ausente.
+        "409":
+          description: Uno o más asientos ya están held o booked.
+
+  /bookings/{reservationId}:
+    delete:
+      summary: Cancelar un hold antes de que expire
+      operationId: cancelReservation
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Hold cancelado, asientos liberados.
+        "404":
+          description: Reserva no encontrada.
+
+  /bookings:
+    post:
+      summary: Completar el pago y finalizar la reserva
+      description: >
+        Confirma el pago y transiciona los asientos reservados a booked.
+        Si el hold ya expiró o el asiento fue confirmado por otra solicitud, retorna 409 sin procesar el pago.
+      operationId: confirmBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reservation_id, payment_token, idempotency_key]
+              properties:
+                reservation_id:
+                  type: string
+                  format: uuid
+                payment_token:
+                  type: string
+                idempotency_key:
+                  type: string
+                  description: Evita procesar dos veces el mismo POST /bookings.
+      responses:
+        "201":
+          description: Reserva confirmada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          description: Solicitud inválida.
+        "402":
+          description: Pago rechazado por el Payment Gateway.
+        "409":
+          description: El hold expiró o el asiento ya fue confirmado por otra solicitud.
+
+  /bookings/{bookingId}:
+    get:
+      summary: Consultar el estado de una reserva confirmada
+      operationId: getBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detalle de la reserva.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: Reserva no encontrada.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Reservation:
+      type: object
+      properties:
+        reservation_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        seat_ids:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    Booking:
+      type: object
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, expired]
+        total_amount:
+          type: number
+          format: decimal
+        tickets:
+          type: array
+          items:
+            type: string

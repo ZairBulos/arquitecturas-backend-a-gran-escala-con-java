@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: Search Service API
+  description: >
+    Búsqueda de eventos por filtro libre, fecha y ubicación.
+    Bounded context de soporte, solo lectura, consistencia eventual (AP).
+  version: 1.0.0
+
+servers:
+  - url: https://api.ticketing.com/v1
+
+paths:
+  /search:
+    get:
+      summary: Buscar eventos
+      description: Búsqueda sobre el índice de Elasticsearch.
+      operationId: searchEvents
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Texto libre (nombre del evento, artista/banda o venue).
+          schema:
+            type: string
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+
+      responses:
+        "200":
+          description: Resultados de búsqueda.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Parámetros de búsqueda inválidos.
+
+components:
+  schemas:
+    EventSummary:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        date:
+          type: string
+          format: date-time
+        venue_name:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        thumbnail_url:
+          type: string
+          format: uri
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventSummary"
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            total:
+              type: integer
+            total_pages:
+              type: integer
+        indexed_at_max_staleness_seconds:
+          type: integer
+          description: Antigüedad máxima estimada del índice, dado que la consistencia es eventual.

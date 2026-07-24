@@ -1,0 +1,81 @@
+openapi: 3.0.3
+info:
+  title: Virtual Waiting Queue API
+  description: >
+    Gate de admisión al flujo de reserva para eventos de alta demanda.
+    Bounded context de soporte, consistencia eventual (AP).
+  version: 1.0.0
+
+servers:
+  - url: https://api.ticketing.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /queue/{eventId}/join:
+    post:
+      summary: Unirse a la fila virtual de un evento
+      operationId: joinQueue
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "201":
+          description: Ingreso a la fila registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueStatus"
+        "409":
+          description: El usuario ya está en la fila para este evento.
+
+  /queue/{eventId}/status:
+    get:
+      summary: Consultar la posición actual en la fila
+      operationId: getQueueStatus
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Estado actual del usuario en la fila.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueStatus"
+        "404":
+          description: El usuario no está en la fila.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    QueueStatus:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+        status:
+          type: string
+          enum: [waiting, admitted]
+        admission_token:
+          type: string
+          nullable: true
+        estimated_wait_seconds:
+          type: integer
+          nullable: true

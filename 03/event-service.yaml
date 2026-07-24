@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: Event Service API
+  description: >
+    Catálogo de eventos, venues y artistas, con vista de lectura del mapa de asientos. 
+    Bounded context de soporte, consistencia eventual (AP).
+  version: 1.0.0
+
+servers:
+  - url: https://api.ticketing.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /events/{eventId}:
+    get:
+      summary: Obtener el detalle de un evento
+      operationId: getEvent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Detalle del evento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Evento no encontrado.
+
+  /events/{eventId}/seats:
+    get:
+      summary: Ver el mapa de asientos en tiempo real
+      description: >
+        Devuelve el layout de asientos del evento junto con su estado actual (disponible, en hold, reservado).
+        El estado puede tener unos segundos de staleness — la reserva siempre se valida contra Booking Service, no contra esta vista.
+      operationId: getEventSeats
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Mapa de asientos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeatMapResponse"
+        "404":
+          description: Evento no encontrado.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [concert, sports, theater]
+        venue:
+          $ref: "#/components/schemas/Venue"
+        performers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+
+    Venue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        capacity:
+          type: integer
+
+    Seat:
+      type: object
+      properties:
+        seat_id:
+          type: string
+        section:
+          type: string
+        row:
+          type: string
+        number:
+          type: string
+        price:
+          type: number
+          format: decimal
+        status:
+          type: string
+          enum: [available, held, booked]
+
+    SeatMapResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+        seats:
+          type: array
+          items:
+            $ref: "#/components/schemas/Seat"
