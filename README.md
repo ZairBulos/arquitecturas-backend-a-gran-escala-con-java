@@ -30,7 +30,7 @@ Sistema de Reservaciones de Alta Concurrencia
 4. **[Data Model:](/04/README.md)**
    Entidades principales, datos y tipos
 5. **[Tech Stack](/05/README.md)**
-6. **Cuestionario de evaluación**
+6. **[Cuestionario de evaluación](/06/README.md)**
 
 ## Presentación
 
