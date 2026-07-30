@@ -4,17 +4,17 @@
 
 ### Event
 
-| Campo                     | Tipo             | Descripción               |
-| ------------------------- | ---------------- | ------------------------- |
-| `_id`                     | ObjectId         | Identificador único       |
-| `name`                    | string           | Nombre del evento         |
-| `description`             | string           | Descripción del evento    |
-| `date`                    | ISODate          | Fecha y hora del evento   |
-| `type`                    | string           | concert, sports, theater  |
-| `thumbnailUrl`            | string           | URL de imagen             |
-| `venueId`                 | ObjectId (ref)   | Referencia a Venue        |
-| `performerIds`            | ObjectId[] (ref) | Referencia a Performer(s) |
-| `created_at`,`updated_at` | ISODate          | Auditoría                 |
+| Campo                     | Tipo       | Descripción               |
+| ------------------------- | ---------- | ------------------------- |
+| `_id`                     | ObjectId   | Identificador único       |
+| `name`                    | string     | Nombre del evento         |
+| `description`             | string     | Descripción del evento    |
+| `date`                    | ISODate    | Fecha y hora del evento   |
+| `type`                    | string     | concert, sports, theater  |
+| `thumbnail_url`           | string     | URL de imagen             |
+| `venue_id`                | ObjectId   | Referencia a Venue        |
+| `performer_ids`           | ObjectId[] | Referencia a Performer(s) |
+| `created_at`,`updated_at` | ISODate    | Auditoría                 |
 
 ### Venue
 
@@ -24,7 +24,7 @@
 | `name`     | string         | Nombre del recinto        |
 | `location` | object         | Ubicación                 |
 | `capacity` | int            | Capacidad total           |
-| `seatMap`  | array embebido | Layout físico de asientos |
+| `seat_map` | array embebido | Layout físico de asientos |
 
 ### Performer
 
@@ -47,16 +47,16 @@
 
 ### SearchableEvent
 
-| Campo                 | Tipo    | Descripción                             |
-| --------------------- | ------- | --------------------------------------- |
-| `event_id`            | keyword | Referencia a Event BC                   |
-| `name`, `description` | text    | Campos full-text                        |
-| `venue_name`, `city`  | text    | Para filtro ubicación                   |
-| `date`                | date    | Filtro y orden                          |
-| `type`                | keyword | Filtro por tipo                         |
-| `performers`          | text[]  | Búsqueedas por artista                  |
-| `thumbnail_url`       | keyword | No indexado para búsqueda, solo display |
-| `indexed_at`          | date    | Detecta staleness                       |
+| Campo                | Tipo    | Descripción                             |
+| -------------------- | ------- | --------------------------------------- |
+| `event_id`           | keyword | Referencia a Event BC                   |
+| `name`,`description` | text    | Campos full-text                        |
+| `venue_name`,`city`  | text    | Para filtro ubicación                   |
+| `date`               | date    | Filtro y orden                          |
+| `type`               | keyword | Filtro por tipo                         |
+| `performers`         | text[]  | Búsqueedas por artista                  |
+| `thumbnail_url`      | keyword | No indexado para búsqueda, solo display |
+| `indexed_at`         | date    | Detecta staleness                       |
 
 ## Queue BC
 
@@ -99,7 +99,7 @@
 | `idempotency_key`                        | string, unique                                    | Evita procesar dos veces |
 | `created_at`,`expires_at`,`confirmed_at` | timestamptz                                       | Ciclo de vida del hold   |
 
-### BookinTicket
+### BookingTicket
 
 | Campo        | Tipo      | Descripción          |
 | ------------ | --------- | -------------------- |
