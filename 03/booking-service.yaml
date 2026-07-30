@@ -46,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Reservation"
+                $ref: "#/components/schemas/Booking"
         "400":
           description: Solicitud inválida.
         "403":
@@ -54,17 +54,27 @@ paths:
         "409":
           description: Uno o más asientos ya están held o booked.
 
-  /bookings/{reservationId}:
+  /bookings/{bookingId}:
+    get:
+      summary: Consultar el estado de un booking
+      operationId: getBooking
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: Detalle del booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: Booking no encontrado
+
     delete:
       summary: Cancelar un hold antes de que expire
       operationId: cancelReservation
       parameters:
-        - name: reservationId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: "#/components/parameters/BookingId"
       responses:
         "204":
           description: Hold cancelado, asientos liberados.
@@ -84,9 +94,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [reservation_id, payment_token, idempotency_key]
+              required: [booking_id, payment_token, idempotency_key]
               properties:
-                reservation_id:
+                booking_id:
                   type: string
                   format: uuid
                 payment_token:
@@ -95,7 +105,7 @@ paths:
                   type: string
                   description: Evita procesar dos veces el mismo POST /bookings.
       responses:
-        "201":
+        "200":
           description: Reserva confirmada
           content:
             application/json:
@@ -105,29 +115,10 @@ paths:
           description: Solicitud inválida.
         "402":
           description: Pago rechazado por el Payment Gateway.
-        "409":
-          description: El hold expiró o el asiento ya fue confirmado por otra solicitud.
-
-  /bookings/{bookingId}:
-    get:
-      summary: Consultar el estado de una reserva confirmada
-      operationId: getBooking
-      parameters:
-        - name: bookingId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: Detalle de la reserva.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Booking"
         "404":
-          description: Reserva no encontrada.
+          description: Booking no encontrado.
+        "409":
+          description: El hold expiró o el booking ya fue confirmado por otra solicitud.
 
 components:
   securitySchemes:
@@ -136,28 +127,23 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-  schemas:
-    Reservation:
-      type: object
-      properties:
-        reservation_id:
-          type: string
-          format: uuid
-        event_id:
-          type: string
-          format: uuid
-        seat_ids:
-          type: array
-          items:
-            type: string
-        expires_at:
-          type: string
-          format: date-time
+  parameters:
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
 
+  schemas:
     Booking:
       type: object
       properties:
         booking_id:
+          type: string
+          format: uuid
+        event_id:
           type: string
           format: uuid
         status:
@@ -166,6 +152,10 @@ components:
         total_amount:
           type: number
           format: decimal
+        seat_ids:
+          type: array
+          items:
+            type: string
         tickets:
           type: array
           items:

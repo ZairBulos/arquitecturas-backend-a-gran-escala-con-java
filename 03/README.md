@@ -13,14 +13,14 @@ Cada servicio documenta su contrato completo en OpenAPI (YAML).
 
 ## Endpoints
 
-| Método | Path                                     | Servicio | Descripción                        |
-| ------ | ---------------------------------------- | -------- | ---------------------------------- |
-| GET    | `/search`                                | Search   | Buscar eventos                     |
-| GET    | `/events/{eventId}`                      | Event    | Detalle de un evento               |
-| GET    | `/events/{eventId}/seats`                | Event    | Mapa de asientos en tiempo real    |
-| POST   | `/queue/{eventId}/join`                  | Queue    | Unirse a la fila virtual           |
-| GET    | `/queue/{eventId}/status`                | Queue    | Consultar posición en la fila      |
-| POST   | `/bookings/reservations`                 | Booking  | Reservar asientos (hold 10 min)    |
-| DELETE | `/bookings/reservations/{reservationId}` | Booking  | Cancelar un hold                   |
-| POST   | `/bookings`                              | Booking  | Completar pago y confirmar reserva |
-| GET    | `/bookings/{bookingId}`                  | Booking  | Consultar estado de una reserva    |
+| Método | Path                      | Servicio | Descripción                        |
+| ------ | ------------------------- | -------- | ---------------------------------- |
+| GET    | `/search`                 | Search   | Buscar eventos                     |
+| GET    | `/events/{eventId}`       | Event    | Detalle de un evento               |
+| GET    | `/events/{eventId}/seats` | Event    | Mapa de asientos en tiempo real    |
+| POST   | `/queue/{eventId}/join`   | Queue    | Unirse a la fila virtual           |
+| GET    | `/queue/{eventId}/status` | Queue    | Consultar posición en la fila      |
+| POST   | `/bookings/reservations`  | Booking  | Reservar asientos (hold 10 min)    |
+| DELETE | `/bookings/{bookingId}`   | Booking  | Cancelar un hold                   |
+| GET    | `/bookings/{bookingId}`   | Booking  | Consultar estado de una reserva    |
+| POST   | `/bookings`               | Booking  | Completar pago y confirmar reserva |
