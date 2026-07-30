@@ -44,9 +44,9 @@ Gate de admisión al flujo de reserva para eventos de alta demanda. El cliente l
 
 Dominio core del sistema: hold temporal (10 min), confirmación de reserva y pago. Es la única fuente de verdad del estado del asiento (available, held, booked).
 
-Evitar que dos usuarios reserven el mismo asiento es el requerimiento más crítico del sistema. Se resuelve con dos capas de protección independientes, no una sola:
+Evitar que dos usuarios reserven el mismo asiento se resuelve con dos capas de protección independientes, no una sola:
 
-1. Hold temporal - bloqueo atómico en Redis:
+1. Bloqueo atómico en Redis
 
    Al seleccionar asientos, Booking Service ejecuta, por cada asiento, una operación atómica tipo:
 
@@ -54,26 +54,26 @@ Evitar que dos usuarios reserven el mismo asiento es el requerimiento más crít
    SET seat:{eventId}:{seatId} {userId} NX EX 600
    ```
 
-   - `NX` ("not exists"): la escritura solo tiene éxito si nadie más tiene el asiento bloqueado. Si dos usuarios seleccionan el mismo asiento en simultáneo, Redis garantiza que solo uno gane — es una operación atómica de un único comando, no hay ventana de carrera entre "leer" y "escribir".
+   - `NX` ("not exists"): la escritura solo tiene éxito si nadie más tiene el asiento bloqueado. Si dos usuarios seleccionan el mismo asiento en simultáneo, Redis garantiza que solo uno gane, no hay ventana de carrera entre "leer" y "escribir".
    - `EX 600`: TTL de 10 minutos. Si el usuario no completa el pago, Redis libera el asiento automáticamente, sin necesidad de un proceso de limpieza adicional.
-   - Si el `SET` falla (el asiento ya estaba tomado), Booking Service responde `409 Conflict` de inmediato — rápido, barato, y evita que la mayoría de los conflictos lleguen siquiera a la base de datos transaccional.
+   - Si el `SET` falla (el asiento ya estaba tomado), Booking Service responde `409 Conflict` de inmediato, y evita que la mayoría de los conflictos lleguen siquiera a la base de datos transaccional.
 
-2. Confirmación de pago - bloqueo optimista en PostgreSQL:
+2. Bloqueo optimista en PostgreSQL
 
    El hold en Redis resuelve el caso común, pero no es la garantía final: existen casos límite (el TTL expira justo cuando el pago se está confirmando, reintentos de red, o un eventual bug en la capa de Redis) donde dos confirmaciones podrían llegar a competir por el mismo asiento. Por eso la confirmación real ocurre con un UPDATE condicional en PostgreSQL:
 
    ```sql
    UPDATE tickets
    SET
-    status = 'booked',
-    version = version + 1
+      status = 'booked',
+      version = version + 1
    WHERE
-    ticket_id = ?
-    AND status = 'held'
-    AND version = ?;
+      ticket_id = ?
+      AND status = 'held'
+      AND version = ?;
    ```
 
-   - Si la fila cambió entre que se leyó y se intentó confirmar (por ejemplo, otro proceso ya la liberó o ya la vendió), el WHERE no matchea, el UPDATE afecta 0 filas, y Booking Service detecta el conflicto — nunca hay una venta duplicada comprometida en la base de datos.
+   - Si la fila cambió entre que se leyó y se intentó confirmar (por ejemplo, otro proceso ya la liberó o ya la vendió), el WHERE no matchea, el UPDATE afecta 0 filas, y Booking Service detecta el conflicto. Nunca hay una venta duplicada comprometida en la base de datos.
    - Si afecta exactamente 1 fila, la transacción ACID de PostgreSQL garantiza que la confirmación es atómica e irreversible.
 
 <mark>CP (Consistency + Partition tolerance)</mark>: Una reserva duplicada es un error de negocio grave e irreversible (dos personas creen que tienen el mismo asiento). Ante una partición de red, el sistema prefiere rechazar la operación antes que arriesgar la duplicación.
